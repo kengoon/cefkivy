@@ -99,7 +99,7 @@ class CefKeyboardManager():
         cef_key_code = self.translate_to_cef_keycode(keycode[0])
 
         # Only send KEYEVENT_KEYUP if its a special (enter, tab ...)
-        if not cef_key_code == keycode[0]:
+        if cef_key_code != keycode[0]:
             key_event = {"type": self.cefpython.KEYEVENT_KEYUP,
                         "native_key_code": cef_key_code,
                         "modifiers": cef_modifiers

@@ -212,7 +212,6 @@ class CefBrowser(Widget):
 
     def on_load_error(self, frame, errorCode, errorText, failedUrl):
         print("on_load_error=> Code: %s, errorText: %s, failedURL: %s" % (errorCode, errorText, failedUrl))
-        pass
 
     def OnCertificateError(self, err, url, cb):
         print err, url, cb
@@ -232,11 +231,10 @@ class CefBrowser(Widget):
         :param attributes: Attributes of HTML element
         """
         if shown:
-            # Check if keyboard should get displayed above
-            above = False
-            if 'class' in attributes:
-                if attributes['class'] in self.keyboard_above_classes:
-                    above = True
+            above = (
+                'class' in attributes
+                and attributes['class'] in self.keyboard_above_classes
+            )
 
             self.request_keyboard()
             kb = self.__keyboard.widget
@@ -256,25 +254,18 @@ class CefBrowser(Widget):
                     spleft = self.x+rect[0]
                     spright = Window.width-rightx
                     y = 0
-                    if spleft <= spright:
-                        x = rightx
-                    else:
-                        x = spleft-kb.width*kb.scale
+                    x = rightx if spleft <= spright else spleft-kb.width*kb.scale
                 elif y+kb.height*kb.scale > Window.height:
                     # If keyboard is above the window height
                     rightx = self.x+rect[0]+rect[2]
                     spleft = self.x+rect[0]
                     spright = Window.width-rightx
                     y = Window.height-kb.height*kb.scale
-                    if spleft <= spright:
-                        x = rightx
-                    else:
-                        x = spleft-kb.width*kb.scale
-                else:
-                    if x < 0:
-                        x = 0
-                    elif Window.width < x+kb.width*kb.scale:
-                        x = Window.width-kb.width*kb.scale
+                    x = rightx if spleft <= spright else spleft-kb.width*kb.scale
+                elif x < 0:
+                    x = 0
+                elif Window.width < x+kb.width*kb.scale:
+                    x = Window.width-kb.width*kb.scale
                 kb.pos = (x, y)
         else:
             self.release_keyboard()
@@ -319,8 +310,7 @@ class CefBrowser(Widget):
     def delete_cookie(self, url=""):
         """ Deletes the cookie with the given url. If url is empty all cookies get deleted.
         """
-        cookie_manager = cefpython.CookieManager.GetGlobalManager()
-        if cookie_manager:
+        if cookie_manager := cefpython.CookieManager.GetGlobalManager():
             cookie_manager.DeleteCookies(url, "")
         else:
             print("No cookie manager found!, Can't delete cookie(s)")
@@ -385,32 +375,28 @@ class CefBrowser(Widget):
                 self.browser.SendMouseClickEvent(x, y, cefpython.MOUSEBUTTON_RIGHT,
                                                  mouseUp=True, clickCount=1
                                                  )
-        else:
-            if touch.is_dragging:
-                # Drag end (mouse up)
-                self.browser.SendMouseClickEvent(
-                    x,
-                    y,
-                    cefpython.MOUSEBUTTON_LEFT,
-                    mouseUp=True, clickCount=1
-                )
-            elif not touch.is_right_click:
-                # Left click (mouse down, mouse up)
-                count = 1
-                if touch.is_double_tap:
-                    count = 2
-                self.browser.SendMouseClickEvent(
-                    x,
-                    y,
-                    cefpython.MOUSEBUTTON_LEFT,
-                    mouseUp=False, clickCount=count
-                )
-                self.browser.SendMouseClickEvent(
-                    x,
-                    y,
-                    cefpython.MOUSEBUTTON_LEFT,
-                    mouseUp=True, clickCount=count
-                )
+        elif touch.is_dragging:
+            # Drag end (mouse up)
+            self.browser.SendMouseClickEvent(
+                x,
+                y,
+                cefpython.MOUSEBUTTON_LEFT,
+                mouseUp=True, clickCount=1
+            )
+        elif not touch.is_right_click:
+            count = 2 if touch.is_double_tap else 1
+            self.browser.SendMouseClickEvent(
+                x,
+                y,
+                cefpython.MOUSEBUTTON_LEFT,
+                mouseUp=False, clickCount=count
+            )
+            self.browser.SendMouseClickEvent(
+                x,
+                y,
+                cefpython.MOUSEBUTTON_LEFT,
+                mouseUp=True, clickCount=count
+            )
 
         self.touches.remove(touch)
         touch.ungrab(self)
@@ -468,9 +454,8 @@ class ClientHandler():
     def OnLoadingStateChange(self, browser, isLoading, canGoBack, canGoForward):
         self.browser_widget.dispatch("on_loading_state_change", isLoading, canGoBack, canGoForward)
         bw = self.browser_widget
-        if bw._reset_js_bindings and not isLoading:
-            if bw:
-                bw.set_js_bindings()
+        if bw._reset_js_bindings and not isLoading and bw:
+            bw.set_js_bindings()
         if isLoading and bw \
                 and bw.keyboard_mode == "local":
             # Release keyboard when navigating to a new page.
@@ -652,8 +637,7 @@ function __kivy__on_escape() {
         pass
 
     def GetCookieManager(self, browser, mainUrl):
-        cookie_manager = cefpython.CookieManager.GetGlobalManager()
-        if cookie_manager:
+        if cookie_manager := cefpython.CookieManager.GetGlobalManager():
             return cookie_manager
         else:
             print("No cookie manager found!")
