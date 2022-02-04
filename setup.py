@@ -7,7 +7,7 @@
 
 from setuptools import setup
 
-install_reqs = ['argparse', 'cefpython3', 'wsgiref']
+install_reqs = ['argparse', 'cefpython3']
 
 # -----------------------------------------------------------------------------
 import cefkivy
